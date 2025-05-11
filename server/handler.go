@@ -48,7 +48,13 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Peer %s joined", clientID)
 
 		case "offer", "answer", "candidate":
-			forwardMessage(signal)
+			targetClient, ok := clients[signal.To]
+			if ok{
+				// Relay the message as-is
+				targetClient.Conn.WriteJSON(signal)
+			}else{
+				log.Println("Target not found:", signal.To)
+			}
 		default:
 			log.Println("Unknown signal type:", signal.Type)
 		}
