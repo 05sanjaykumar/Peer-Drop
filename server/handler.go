@@ -48,13 +48,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Peer %s joined", clientID)
 
 		case "offer", "answer", "candidate":
-			targetClient, ok := clients[signal.To]
-			if ok{
-				// Relay the message as-is
-				targetClient.Conn.WriteJSON(signal)
-			}else{
-				log.Println("Target not found:", signal.To)
-			}
+			forwardMessage(signal)
+
 		default:
 			log.Println("Unknown signal type:", signal.Type)
 		}
@@ -75,17 +70,15 @@ func removeClient(id string) {
 	log.Printf("Peer %s disconnected", id)
 }
 
-func forwardMessage(msg SignalMessage) {
+func forwardMessage(signal SignalMessage) {
 	clientsMu.RLock()
 	defer clientsMu.RUnlock()
 
-	target, ok := clients[msg.To]
-	if !ok {
-		log.Printf("Peer %s not found", msg.To)
-		return
+	targetClient, ok := clients[signal.To]
+	if ok {
+		targetClient.Conn.WriteJSON(signal.Payload)
+	} else {
+		log.Println("Target not found:", signal.To)
 	}
 
-	if err := target.Conn.WriteJSON(msg); err != nil {
-		log.Println("Write error:", err)
-	}
 }
