@@ -12,7 +12,11 @@ import (
 var (
 	clients   = make(map[string]*Client)
 	clientsMu sync.RWMutex
-	upgrader  = websocket.Upgrader{}
+	upgrader  = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
 )
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
