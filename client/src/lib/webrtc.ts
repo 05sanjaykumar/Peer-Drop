@@ -10,11 +10,11 @@ const config: RTCConfiguration = {
 export function createPeer(
   isInitiator: boolean,
   onData: (msg: string) => void,
-  sendSignal: (msg: any) => void
+  sendSignal: (msg: any) => void,
+  onDataChannelOpen: () => void
 ) {
   peerConnection = new RTCPeerConnection(config);
 
-  // ICE candidate handler
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       sendSignal({
@@ -24,18 +24,16 @@ export function createPeer(
     }
   };
 
-  // DataChannel setup
   if (isInitiator) {
     dataChannel = peerConnection.createDataChannel("chat");
-    setupDataChannel(dataChannel, onData);
+    setupDataChannel(dataChannel, onData, onDataChannelOpen);
   } else {
     peerConnection.ondatachannel = (event) => {
       dataChannel = event.channel;
-      setupDataChannel(dataChannel, onData);
+      setupDataChannel(dataChannel, onData, onDataChannelOpen);
     };
   }
 
-  // expose for sending messages
   window['dataChannel'] = dataChannel;
 
   return peerConnection;
@@ -43,10 +41,18 @@ export function createPeer(
 
 function setupDataChannel(
   channel: RTCDataChannel,
-  onData: (msg: string) => void
+  onData: (msg: string) => void,
+  onOpen: () => void
 ) {
-  channel.onopen = () => console.log("Data channel open");
-  channel.onmessage = (event) => onData(event.data);
+  channel.onopen = () => {
+    console.log("Data channel open");
+    onOpen();
+  };
+
+  channel.onmessage = (event) => {
+    console.log("Message from peer:", event.data);
+    onData(event.data);
+  };
 }
 
 export async function createOffer(

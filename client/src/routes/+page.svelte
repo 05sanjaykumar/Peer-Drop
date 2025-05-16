@@ -1,88 +1,108 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { connectSocket, sendSignal } from '$lib/ws';
-	import {
-		createPeer,
-		createOffer,
-		handleOffer,
-		handleAnswer,
-		addIceCandidate
-	} from '$lib/webrtc';
+  import { connectSocket, sendSignal } from '$lib/ws';
+  import {
+    createPeer,
+    createOffer,
+    handleOffer,
+    handleAnswer,
+    addIceCandidate
+  } from '$lib/webrtc';
 
-	let peerId = '';
-	let targetId = '';
-	let connected = false;
-	let isInitiator = false;
-	let message = '';
-	let chatLog: string[] = [];
+  let peerId = '';
+  let targetId = '';
+  let connected = false;
+  let messages: string[] = [];
+  let newMessage = '';
 
-	function log(msg: string) {
-		chatLog = [...chatLog, msg];
-	}
+  let isInitiator = false;
+  let channelReady = false;
 
-	function connect() {
-		if (!peerId) {
-			alert("Enter your ID");
-			return;
-		}
-		connectSocket(peerId, async (data) => {
-			if (data.type === 'offer') {
-				await createPeer(false, handleMessage, sendSignal);
-				await handleOffer(data.payload, sendSignal, peerId, data.from);
-			} else if (data.type === 'answer') {
-				await handleAnswer(data.payload);
-			} else if (data.type === 'candidate') {
-				await addIceCandidate(data.payload);
-			}
-		});
-		connected = true;
-		log(`Connected as ${peerId}`);
-	}
+  function connect() {
+    if (!peerId) {
+      alert("Enter your Peer ID first!");
+      return;
+    }
 
-	async function call() {
-		if (!targetId) {
-			alert("Enter target ID");
-			return;
-		}
-		isInitiator = true;
-		createPeer(true, handleMessage, sendSignal);
-		await createOffer(sendSignal, peerId, targetId);
-		log(`Calling ${targetId}...`);
-	}
+    connectSocket(peerId, async (signal) => {
+      console.log("Received signal", signal);
 
-	function handleMessage(msg: string) {
-		log(`Peer: ${msg}`);
-	}
+      if (signal.type === "offer") {
+        createPeer(false, onData, sendSignal, onDataChannelOpen);
+        await handleOffer(signal.payload, sendSignal, peerId, signal.from);
+      } else if (signal.type === "answer") {
+        await handleAnswer(signal.payload);
+      } else if (signal.type === "candidate") {
+        await addIceCandidate(signal.payload);
+      }
+    });
 
-	function sendMessage() {
-		if (!message.trim()) return;
-		log(`You: ${message}`);
-		// Send over datachannel
-		window['dataChannel']?.send(message);
-		message = '';
-	}
+    connected = true;
+  }
+
+  async function startConnection() {
+    if (!targetId) {
+      alert("Enter target peer ID to connect");
+      return;
+    }
+    isInitiator = true;
+    createPeer(true, onData, sendSignal, onDataChannelOpen);
+    await createOffer(sendSignal, peerId, targetId);
+  }
+
+  function sendMessage() {
+    if (!newMessage.trim() || !channelReady) return;
+
+    messages = [...messages, `You: ${newMessage}`];
+    (window as any).dataChannel.send(newMessage);
+    newMessage = '';
+  }
+
+  function onData(msg: string) {
+    messages = [...messages, `Peer: ${msg}`];
+  }
+
+  function onDataChannelOpen() {
+    console.log("Data channel open!");
+    channelReady = true;
+  }
 </script>
 
-<main>
-	<h1>🧪 PeerDrop WebRTC</h1>
+<h2>Peer-to-Peer Chat</h2>
 
-	<div>
-		<label>🆔 Your ID: <input bind:value={peerId} /></label>
-		<button on:click={connect} disabled={connected}>Connect</button>
-	</div>
+<div>
+  <label>
+    Your ID:
+    <input bind:value={peerId} placeholder="e.g. alice" />
+  </label>
+  <button on:click={connect} disabled={connected}>Connect</button>
+</div>
 
-	{#if connected}
-		<div>
-			<label>🎯 Target Peer ID: <input bind:value={targetId} /></label>
-			<button on:click={call}>Call</button>
-		</div>
+{#if connected}
+  <div style="margin-top: 1rem;">
+    <label>
+      Peer to connect:
+      <input bind:value={targetId} placeholder="e.g. bob" />
+    </label>
+    <button on:click={startConnection} disabled={!targetId}>Start Chat</button>
+  </div>
+{/if}
 
-		<div>
-			<label>💬 Message: <input bind:value={message} /></label>
-			<button on:click={sendMessage}>Send</button>
-		</div>
-	{/if}
+{#if messages.length > 0}
+  <h3>Messages:</h3>
+  <ul>
+    {#each messages as msg}
+      <li>{msg}</li>
+    {/each}
+  </ul>
+{/if}
 
-	<h2>📜 Chat Log</h2>
-	<pre>{chatLog.join('\n')}</pre>
-</main>
+{#if connected}
+  <div>
+    <input
+      bind:value={newMessage}
+      on:keydown={(e) => e.key === 'Enter' && sendMessage()}
+      placeholder="Type your message..."
+    />
+    <button on:click={sendMessage} disabled={!channelReady}>Send</button>
+  </div>
+{/if}
