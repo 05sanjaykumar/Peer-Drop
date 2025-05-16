@@ -1,74 +1,67 @@
-// place files you want to import through the `$lib` alias in this folder.
+import { sendSignal } from '$lib/ws';
+
 let peerConnection: RTCPeerConnection;
-let dataChannel: RTCDataChannel;
+let localPeerId: string;
+let remotePeerId: string;
 
-const config: RTCConfiguration = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-};
+export function initWebRTC(localId: string, remoteId: string){
+  localPeerId = localId;
+  remotePeerId = remoteId;
+  
+  peerConnection = new RTCPeerConnection({
+		iceServers: [
+			{ urls: 'stun:stun.l.google.com:19302' }
+		]
+	});
 
-export function createPeer(isInitiator: boolean, onData: (msg: string) => void, sendSignal: (msg: any) => void) {
-  peerConnection = new RTCPeerConnection(config);
 
-  // Handle incoming ICE candidates from STUN/TURN
   peerConnection.onicecandidate = (event) => {
-    if (event.candidate) {
-      sendSignal({
-        type: "candidate",
-        payload: event.candidate
-      });
-    }
+		if (event.candidate) {
+			sendSignal({
+				type: 'candidate',
+				from: localPeerId,
+				to: remotePeerId,
+				payload: event.candidate
+			});
+		}
+	};
+
+  peerConnection.ontrack = (event) =>{
+      console.log("Track received:", event.streams[0]);
   };
-
-  // Setup DataChannel
-  if (isInitiator) {
-    dataChannel = peerConnection.createDataChannel("chat");
-    setupDataChannel(dataChannel, onData);
-  } else {
-    peerConnection.ondatachannel = (event) => {
-      dataChannel = event.channel;
-      setupDataChannel(dataChannel, onData);
-    };
-  }
-
   return peerConnection;
+
 }
 
-function setupDataChannel(channel: RTCDataChannel, onData: (msg: string) => void) {
-  channel.onopen = () => console.log("Data channel open");
-  channel.onmessage = (event) => {
-    console.log("Message from peer:", event.data);
-    onData(event.data);
-  };
+export async function createOffer() {
+	const offer = await peerConnection.createOffer();
+	await peerConnection.setLocalDescription(offer);
+
+	sendSignal({
+		type: 'offer',
+		from: localPeerId,
+		to: remotePeerId,
+		payload: offer
+	});
 }
 
-export async function createOffer(sendSignal: (msg: any) => void, from: string, to: string) {
-  const offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
-  sendSignal({
-    type: "offer",
-    from,
-    to,
-    payload: offer
-  });
-}
+export async function createAnswer(offer: RTCSessionDescriptionInit) {
+	await peerConnection.setRemoteDescription(offer);
+	const answer = await peerConnection.createAnswer();
+	await peerConnection.setLocalDescription(answer);
 
-export async function handleOffer(offer: RTCSessionDescriptionInit, sendSignal: (msg: any) => void, from: string, to: string) {
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-  const answer = await peerConnection.createAnswer();
-  await peerConnection.setLocalDescription(answer);
-  sendSignal({
-    type: "answer",
-    from,
-    to,
-    payload: answer
-  });
+	sendSignal({
+		type: 'answer',
+		from: localPeerId,
+		to: remotePeerId,
+		payload: answer
+	});
 }
-
 
 export async function handleAnswer(answer: RTCSessionDescriptionInit) {
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+	await peerConnection.setRemoteDescription(answer);
 }
 
-export async function addIceCandidate(candidate: RTCIceCandidateInit) {
-  await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+export function addCandidate(candidate: RTCIceCandidateInit) {
+	peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
 }
