@@ -1,49 +1,94 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { connectSocket, sendSignal } from '$lib/ws';
+  import {
+    createPeer,
+    createOffer,
+    handleOffer,
+    handleAnswer,
+    addIceCandidate
+  } from '$lib/webrtc';
 
   let peerId = '';
-	let connected = false;
-	let messages: string[] = [];
+  let remotePeerId = '';
+  let connected = false;
+  let messages: string[] = [];
+  let inputMessage = '';
 
-  function connect() {
-		if (!peerId) {
-			alert("Enter your Peer ID first!");
-			return;
-		}
+    onMount(() => {
+    connectSocket(peerId, async (data) => {
+      console.log("SIGNAL RECEIVED:", data);
 
-		connectSocket(peerId, (data) => {
-			console.log("Received:", data);
-			messages.push(JSON.stringify(data, null, 2));
-		});
+      switch (data.type) {
+        case 'offer':
+          await createPeer(false, handleData, sendSignal);
+          await handleOffer(data.payload, sendSignal, peerId, data.from);
+          break;
 
-		connected = true;
-	}
+        case 'answer':
+          await handleAnswer(data.payload);
+          break;
+
+        case 'candidate':
+          await addIceCandidate(data.payload);
+          break;
+
+        default:
+          console.warn("Unknown message type", data);
+      }
+    });
+  });
+
+  function handleData(msg: string) {
+    messages = [...messages, `Peer: ${msg}`];
+  }
+
+  async function connectToPeer() {
+    if (!remotePeerId) {
+      alert("Enter remote peer ID!");
+      return;
+    }
+
+    await createPeer(true, handleData, sendSignal);
+    await createOffer(sendSignal, peerId, remotePeerId);
+    connected = true;
+  }
+
+  function sendMessage() {
+    if (!inputMessage) return;
+
+    messages = [...messages, `You: ${inputMessage}`];
+    // Send via WebRTC data channel
+    window.dataChannel?.send(inputMessage); // optional: expose globally or use closure
+    inputMessage = '';
+  }
+
 </script>
 
-<main>
-  <h1 class="text-xl font-bold mb-4">🛰️ PeerDrop Signaling Test</h1>
-  {#if !connected}
-  <input
-			placeholder="Enter your peer ID"
-			bind:value={peerId}
-			class="border p-2 rounded mr-2"
-		/>
-    <button on:click={connect} class="bg-blue-500 text-white px-4 py-2 rounded">
-			Connect
-		</button>
-    {:else}
-		<p class="text-green-600">Connected as <strong>{peerId}</strong></p>
-	{/if}
 
-	<div class="mt-4">
-		<h2 class="font-semibold">Incoming Messages:</h2>
-		<pre class="bg-gray-100 p-2 rounded overflow-auto max-h-64">{messages.join('\n\n')}</pre>
-	</div>
-</main>
+<!-- UI Layout -->
+<div class="p-4 space-y-4">
+  <div>
+  <label for="your-id">Your Peer ID</label>
+  <input id="your-id" bind:value={peerId} class="border p-1" />
+</div>
 
-<style>
-  input, button {
-		font-size: 1rem;
-	}
-</style>
+<div>
+  <label for="remote-id">Connect to Peer ID</label>
+  <input id="remote-id" bind:value={remotePeerId} class="border p-1" />
+</div>
+
+<div>
+  <label for="message">Send Message</label>
+  <input id="message" bind:value={inputMessage} class="border p-1" />
+</div>
+
+  <div class="mt-4">
+    <h2>Chat</h2>
+    <div class="border p-2 h-40 overflow-y-auto">
+      {#each messages as msg}
+        <div>{msg}</div>
+      {/each}
+    </div>
+  </div>
+</div>
