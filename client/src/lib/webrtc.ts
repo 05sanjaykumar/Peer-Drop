@@ -2,6 +2,10 @@
 
 let peerConnection: RTCPeerConnection;
 let dataChannel: RTCDataChannel;
+let dataChannelGlobal: RTCDataChannel | null = null;
+
+let candidateQueue: RTCIceCandidateInit[] = [];
+let remoteSet = false;
 
 const config: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
@@ -23,6 +27,14 @@ export function createPeer(
       });
     }
   };
+    peerConnection.oniceconnectionstatechange = () => {
+    console.log("ICE state:", peerConnection.iceConnectionState);
+  };
+
+  peerConnection.onconnectionstatechange = () => {
+    console.log("Peer connection state:", peerConnection.connectionState);
+  };
+
 
   if (isInitiator) {
     dataChannel = peerConnection.createDataChannel("chat");
@@ -34,7 +46,8 @@ export function createPeer(
     };
   }
 
-  window['dataChannel'] = dataChannel;
+  dataChannelGlobal = dataChannel;
+
 
   return peerConnection;
 }
@@ -77,9 +90,25 @@ export async function handleOffer(
   from: string,
   to: string
 ) {
+  console.log("[WebRTC] Received Offer");
+
+  // Set remote description first
   await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+  // ✅ Mark remote set (for ICE candidate queuing)
+  remoteSet = true;
+
+  // ✅ Flush queued ICE candidates
+  for (const c of candidateQueue) {
+    await addIceCandidate(c);
+  }
+  candidateQueue = [];
+
+  // Create and send answer
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
+
+  console.log("[WebRTC] Sending Answer");
 
   sendSignal({
     type: "answer",
@@ -94,5 +123,13 @@ export async function handleAnswer(answer: RTCSessionDescriptionInit) {
 }
 
 export async function addIceCandidate(candidate: RTCIceCandidateInit) {
+  if (!remoteSet) {
+    candidateQueue.push(candidate);
+    return;
+  }
   await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+}
+
+export function getDataChannel() {
+  return dataChannelGlobal;
 }

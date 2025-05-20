@@ -1,11 +1,13 @@
 <script lang="ts">
   import { connectSocket, sendSignal } from '$lib/ws';
+
   import {
     createPeer,
     createOffer,
     handleOffer,
     handleAnswer,
-    addIceCandidate
+    addIceCandidate,
+    getDataChannel
   } from '$lib/webrtc';
 
   let peerId = '';
@@ -49,11 +51,11 @@
     await createOffer(sendSignal, peerId, targetId);
   }
 
-  function sendMessage() {
+    function sendMessage() {
     if (!newMessage.trim() || !channelReady) return;
 
     messages = [...messages, `You: ${newMessage}`];
-    (window as any).dataChannel.send(newMessage);
+    getDataChannel()?.send(newMessage); // safer
     newMessage = '';
   }
 

@@ -80,7 +80,7 @@ func forwardMessage(signal SignalMessage) {
 
 	targetClient, ok := clients[signal.To]
 	if ok {
-		targetClient.Conn.WriteJSON(signal.Payload)
+		targetClient.Conn.WriteJSON(signal)
 	} else {
 		log.Println("Target not found:", signal.To)
 	}
