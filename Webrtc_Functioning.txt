@@ -1,0 +1,48 @@
+[Initiator]                                           [Receiver]
+    |                                                      |
+    |     (connectSocket sends "join" via WebSocket)       |
+    |----------------------------------------------------->|
+    |                                                      |
+    |                                                      |
+    |       [User clicks "Start Chat"]                     |
+    |       - createPeer(true, ...)                        |
+    |       - createOffer(sendSignal, ...)                 |
+    |           -> peerConnection.setLocalDescription()    |
+    |           -> sendSignal({ type: "offer", ... })      |
+    |                                                      |
+    |----------------------------------------------------->|
+    |                                                      |
+    |                               [Receiver receives offer]
+    |                               - connectSocket handler fires
+    |                                 - createPeer(false, ...) 
+    |                                 - handleOffer(...)        
+    |                                     -> setRemoteDescription()
+    |                                     -> createAnswer()
+    |                                     -> setLocalDescription()
+    |                                     -> sendSignal({type: "answer"}) 
+    |                                                      |
+    |<-----------------------------------------------------|
+    |                                                      |
+    |     [Initiator receives answer]                      |
+    |     - handleAnswer(...)                              |
+    |         -> setRemoteDescription()                    |
+    |                                                      |
+    |                                                      |
+    |        Both peers now exchange ICE candidates        |
+    |                                                      |
+    |    onicecandidate -> sendSignal({type: "candidate"}) |
+    |----------------------------------------------------->|
+    |                                                      |
+    |       (receiver receives candidate via WebSocket)    |
+    |       - addIceCandidate(...)                         |
+    |                                                      |
+    |<-----------------------------------------------------|
+    |                                                      |
+    |       (initiator receives candidate)                 |
+    |       - addIceCandidate(...)                         |
+    |                                                      |
+    |                                                      |
+    |     ✅ DataChannel is open on both sides             |
+    |     - onopen -> onDataChannelOpen()                  |
+    |     - You can now use getDataChannel().send(...)     |
+    |                                                      |
