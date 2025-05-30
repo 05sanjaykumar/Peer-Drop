@@ -37,10 +37,18 @@ export default function ProfileSetup() {
     setEditing(true);
   };
 
+  const handleReset = async ()=>{
+      await db.profiles.delete("me");  
+      setProfile(null);                
+      setEditing(true);                
+      setName("");                     
+      
+  }
+
   const navigateToRoom = ()=>{
     if (profile)
     {
-         navigate("/room");
+         navigate("/rooms");
     }
   }
 
@@ -50,12 +58,23 @@ export default function ProfileSetup() {
         <>
           <h2 className="text-lg font-bold text-black">Hello, {profile.name}!</h2>
           {!editing && (
-            <button
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={handleEdit}
-            >
-              Modify Profile
-            </button>
+            <div>
+              <button
+                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={handleEdit}
+                >
+                Modify Profile
+              </button>
+              <button className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
+              onClick={handleReset}
+              >
+                Reset
+              </button>
+              <Button onClick={navigateToRoom}>
+                Navigate to room
+              </Button>
+            </div>
+            
           )}
         </>
       ) : (
@@ -78,9 +97,7 @@ export default function ProfileSetup() {
           </button>
         </div>
       )}
-      <Button onClick={navigateToRoom}>
-        Navigate to room
-      </Button>
+
     </div>
   );
 }

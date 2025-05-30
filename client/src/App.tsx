@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import { ThemeProvider } from "./components/theme-provider";
 import  ProfileSetup  from "@/pages/ProfileSetup";
+import Rooms from "./pages/Rooms";
 
 function App() {
 
@@ -10,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/profile" element={<ProfileSetup/>}/>
+        <Route path="/rooms" element={<Rooms/>}/>
       </Routes>
     </ThemeProvider>
   )
