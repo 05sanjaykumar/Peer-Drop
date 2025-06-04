@@ -1,57 +1,36 @@
-//pages/Rooms.tsx
-import React, { use, useEffect, useState } from 'react'
-import { db } from '@/lib/db'
-import { useNavigate } from 'react-router-dom'
-import { v4 as uuidv4 } from 'uuid'
-import { Button } from '@/components/ui/button'
+// pages/Rooms.tsx
+import  { useEffect, useState } from "react";
+import { db } from "@/lib/db";
+import RoomSidebar from "@/components/RoomSidebar";
+import { useNavigate } from "react-router-dom";
 
 const Rooms = () => {
-    const navigate = useNavigate()
-    const [profile, setProfile] = useState<any>(null)
-    const [roomName, setRoomName] = useState("")
-    useEffect(() => {
-        const loadProfile = async()=>{
-            const saved = await db.profiles.get('me')
-            if(!saved){
-                alert('User not save and redirecting to profile page')
-                navigate('/profile')
-            }
-            else
-            {
-                setProfile(saved)
-            }
-        }
-        loadProfile()
-    }, [])
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-    const handleCreateRoom = async ()=>{
-        if (!roomName || !profile) return
+  useEffect(() => {
+    const loadProfile = async () => {
+      const profile = await db.profiles.get("me");
+      if (!profile) {
+        alert("Redirecting to profile setup.");
+        navigate("/profile");
+      } else {
+        setProfileId(profile.id);
+      }
+    };
+    loadProfile();
+  }, []);
 
-        const newRoom = {
-            id: uuidv4(),
-            name: roomName,
-            createdBy: profile.id,
-            participants: [profile.id],
-            createdAt: new Date()
-        }
+  if (!profileId) return null;
 
-        await db.rooms.put(newRoom)
-        console.log("Room created:", newRoom)
-        navigate(`/room/${newRoom.id}`)
-    }
-    
   return (
-    <div className="p-6 max-w-md mx-auto bg-white rounded-xl shadow space-y-4">
-      <h2 className="text-xl font-bold">Welcome {profile?.name}, Create or Join a Room</h2>
-      <input
-        className="border px-2 py-1 w-full text-black"
-        placeholder="Enter room name"
-        value={roomName}
-        onChange={(e) => setRoomName(e.target.value)}
-      />
-      <Button onClick={handleCreateRoom}>Create Room +</Button>
+    <div className="flex">
+      <RoomSidebar currentUserId={profileId} />
+      <div className="flex-1 p-6">
+        <h1 className="text-2xl font-bold">Select or Create a Room</h1>
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default Rooms
+export default Rooms;
