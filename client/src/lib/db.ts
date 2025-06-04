@@ -24,7 +24,7 @@ class WebRTCAppDB extends Dexie {
     super("WebRTCAppDB");
     this.version(2).stores({
       profiles: "id, name, lastActive",
-      rooms: "id, name, createdBy, createdAt"
+      rooms: "id, name, createdBy"
     });
   }
 }

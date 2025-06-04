@@ -12,6 +12,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/profile" element={<ProfileSetup/>}/>
         <Route path="/rooms" element={<Rooms/>}/>
+        <Route path="/room/:id" element={<div>Room Page Coming Soon</div>} />
       </Routes>
     </ThemeProvider>
   )
