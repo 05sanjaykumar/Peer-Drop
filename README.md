@@ -1,6 +1,6 @@
 # 📡 PeerDrop
 
-**PeerDrop** is a secure, real-time peer-to-peer (P2P) file sharing and chat application built with modern technologies like **SvelteKit**, **Go**, **WebRTC**, and **Docker**.
+**PeerDrop** is a secure, real-time peer-to-peer (P2P) file sharing and chat application built with modern technologies like **React**, **Go**, **WebRTC**, and **Docker**.
 
 > 🔥 Real-time. 🔐 End-to-end encrypted. ⚙️ Fully containerized.
 
@@ -22,7 +22,7 @@
 
 | Layer      | Tech                           | Purpose                          |
 | ---------- | ------------------------------ | -------------------------------- |
-| Frontend   | [SvelteKit](https://kit.svelte.dev/) | Reactive UI + routing            |
+| Frontend   | [React](https://react.dev/) | Reactive UI + routing            |
 | Backend    | [Go](https://go.dev/)          | Signaling server                 |
 | Networking | WebSocket + WebRTC             | Real-time P2P transport          |
 | Security   | AES-GCM, PBKDF2, ECC (opt-in)  | End-to-end encryption            |
@@ -30,26 +30,6 @@
 
 ---
 
-## 📁 Project Structure
-
-```
-
-peerdrop/
-├── client/                 # SvelteKit frontend
-│   ├── src/
-│   │   ├── routes/         # Pages (UI)
-│   │   ├── lib/            # Encryption, WebRTC logic
-│   └── static/             # Public files
-├── server/                 # Go signaling server
-│   ├── main.go
-│   ├── handlers.go
-│   └── Dockerfile
-├── docker-compose.yml      # Full stack orchestration
-└── README.md               # You're here!
-
-````
-
----
 
 ## 🛠 Setup & Development
 
@@ -77,12 +57,11 @@ cd server
 go run main.go
 ```
 
-#### 3. Run SvelteKit Client
+#### 3. Run React Client
 
 ```bash
 cd client
-pnpm install
-pnpm dev
+npm run dev
 ```
 
 Visit: `http://localhost:5173`
@@ -110,17 +89,6 @@ Backend (WebSocket): `ws://localhost:8080/ws`
 
 ---
 
-## 📌 Roadmap
-
-* [x] WebSocket signaling server in Go
-* [x] SvelteKit frontend + WebRTC handshake
-* [ ] Encrypted file transfer
-* [ ] Encrypted chat
-* [ ] ECC keypair identity system
-* [ ] Drag & drop upload, file previews
-* [ ] Docker production deployment
-
----
 
 ## 🧠 Learnings & Concepts
 
@@ -128,7 +96,7 @@ Backend (WebSocket): `ws://localhost:8080/ws`
 * Real-time messaging protocols
 * Cryptographic key exchange
 * Concurrency with Go
-* SvelteKit UI + reactive state
+* React TS + tailwind
 * Docker container orchestration
 
 ---
