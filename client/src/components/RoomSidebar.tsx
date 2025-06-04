@@ -30,6 +30,7 @@ export default function RoomSidebar({ currentUserId }: { currentUserId: string }
         };
 
         await db.rooms.put(newRoom);
+        console.log('new room created', newRoom)
         setRooms(await db.rooms.toArray());
         setRoomName("");
     };
@@ -40,13 +41,19 @@ export default function RoomSidebar({ currentUserId }: { currentUserId: string }
     }
 
     return (
-        <div className="w-64 bg-gray-100 h-screen p-4 border-r space-y-4">
+        <div className=" bg-gray-100 h-screen p-4 border-r space-y-4">
              <h2 className="text-xl font-bold">Rooms</h2>
              <div className="flex gap-2">
                 <input 
-                 className="flex-1 px-2 py-1 border text-black"
+                className="flex-1 px-2 py-1 border text-black"
+                value={roomName}
+                onChange={(e)=>setRoomName(e.target.value)}
+                placeholder="Enter room name"
                 />
-              <Button onClick={createRoom} className="bg-green-400">create room</Button>
+              <button onClick={createRoom} className="bg-green-400 text-white px-2 py-1 rounded-md">
+                Create Room
+              </button>
+
              </div>
              <ul className="space-y-2">
                 {rooms.map((room)=>(
