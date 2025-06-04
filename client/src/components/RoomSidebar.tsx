@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { db, type Room } from "@/lib/db";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
 
 export default function RoomSidebar({ currentUserId }: { currentUserId: string }) {
