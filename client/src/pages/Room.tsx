@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db, type Room } from "@/lib/db";
-import { v4 as uuidv4 } from "uuid";
+
 
 type Profile = {
   id: string;
