@@ -57,7 +57,7 @@ export default function RoomSidebar({ currentUserId }: { currentUserId: string }
              <ul className="space-y-2">
                 {rooms.map((room)=>(
                     <li key={room.id} className="flex justify-between items-center bg-white px-2 py-1 rounded shadow">
-                        <span
+                        <span className="text-blue-600 cursor-pointer hover:underline"
                         onClick={()=>navigate(`/room/${room.id}`)}
                         >
                             {room.name}
